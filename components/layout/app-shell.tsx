@@ -55,6 +55,7 @@ export function AppShell({ children }: AppShellProps) {
             showMenuButton={hideNav}
             showSearch={width === null || width >= 1120}
             showCrumbTenant={width === null || width >= 640}
+            label="Buscar produtos, SKUs ou movimentações"
             onToggleNav={() => setNavOpen((v) => !v)}
           />
           <SubscriptionBanner />

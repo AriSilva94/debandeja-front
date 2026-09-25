@@ -15,6 +15,8 @@ segredos da plataforma.
 | `BACKEND_URL` | sim | URL da API como o **servidor** Next a alcança (de preferência rede interna, não pública). |
 | `INTERNAL_API_TOKEN` | sim | **Mesmo valor** do backend. Ver a seção 2. |
 | `TRUST_PROXY_HEADERS` | sim | `true` só com proxy confiável na frente. Ver a seção 2. |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | sim | Credenciais OAuth Web do Google. O secret fica somente no BFF. |
+| `GOOGLE_REDIRECT_URI` | sim | URI de callback exata cadastrada no Google. Dev: `https://dev.debandeja.store/api/auth/google/callback`; prd: `https://debandeja.store/api/auth/google/callback`. |
 | `NODE_ENV` | — | `next build`/`next start` já definem `production`; **não sobrescrever**. É o que liga o `secure` dos cookies de sessão. |
 
 ## 2. Rate limit e IP do visitante
@@ -64,6 +66,7 @@ No Dokploy (o backend tem o passo a passo completo em
 - Domínio público com HTTPS (Let's Encrypt) apontando para a porta 3000. Sem
   HTTPS o browser descarta os cookies `secure` e ninguém consegue entrar.
 - `BACKEND_URL=http://<nome-interno-do-serviço-backend>:3000` (rede interna).
+- `GOOGLE_REDIRECT_URI=https://dev.debandeja.store/api/auth/google/callback` (prd: `https://debandeja.store/api/auth/google/callback`). O valor deve ser idêntico à URI de redirecionamento autorizada no Google Cloud.
 - `TRUST_PROXY_HEADERS=true` com o Traefik do Dokploy na frente: por padrão ele
   descarta o `X-Forwarded-For` vindo do cliente e grava o IP real da conexão.
   **Exceção:** se houver Cloudflare com proxy ligado (nuvem laranja) na frente, o
@@ -98,6 +101,7 @@ renovações numa só, mas essa coordenação vive **na memória de cada instân
 - [ ] `BACKEND_URL` apontando para a API (rede interna, se possível)
 - [ ] `INTERNAL_API_TOKEN` idêntico ao do backend e exclusivo do ambiente
 - [ ] `TRUST_PROXY_HEADERS` conferido contra a infraestrutura real (proxy sobrescreve `X-Forwarded-For`?)
+- [ ] `GOOGLE_REDIRECT_URI` idêntica à URI autorizada no Google Cloud
 - [ ] Imagem do GHCR (`:dev` / `:latest`), domínio com HTTPS e health check *healthy*
 - [ ] Secrets de webhook do Dokploy no repositório
 - [ ] Proxy preserva o cabeçalho `Host` (padrão do Traefik)

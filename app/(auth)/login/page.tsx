@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
+import { FcGoogle } from "react-icons/fc";
 import { AuthLayout, AuthPanel, AuthFormPane } from "@/components/auth/auth-layout";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
@@ -140,6 +141,20 @@ export default function LoginPage() {
               {login.isPending ? "Entrando…" : "Entrar"}
             </Button>
           </form>
+
+          <div className="my-5 flex items-center gap-3 text-xs text-gray-400" aria-hidden>
+            <span className="h-px flex-1 bg-gray-200" />
+            <span>ou</span>
+            <span className="h-px flex-1 bg-gray-200" />
+          </div>
+
+          <a
+            href="/api/auth/google"
+            className="inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-[10px] border border-brand-subtle-border bg-brand-subtle px-5 text-[14.5px] font-semibold text-brand-dark transition-colors hover:border-brand hover:bg-brand hover:text-white focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand/20"
+          >
+            <FcGoogle size={20} aria-hidden />
+            Continuar com Google
+          </a>
 
           <div className="mt-6 border-t border-brand-subtle-border pt-5 text-center text-sm text-gray-500">
             Ainda não possui uma conta?{" "}

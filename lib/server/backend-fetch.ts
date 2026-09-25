@@ -8,6 +8,7 @@ type BackendFetchOptions = {
   method?: string;
   body?: BodyInit | null;
   headers?: Record<string, string>;
+  signal?: AbortSignal;
   skipTenantHeader?: boolean;
 };
 
@@ -70,6 +71,7 @@ async function doFetch(
     method: options.method ?? "GET",
     headers,
     body: options.body,
+    signal: options.signal,
     cache: "no-store",
   });
 }

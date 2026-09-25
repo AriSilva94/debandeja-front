@@ -49,6 +49,14 @@ describe("login com e-mail não confirmado", () => {
     const resendCall = vi.mocked(fetch).mock.calls.find(([path]) => path === "/api/auth/resend-verification");
     expect(JSON.parse(String(resendCall?.[1]?.body))).toEqual({ email: "dono@distribuidora.com" });
   });
+
+  it("oferece login Google com ícone da biblioteca e tratamento visual da marca", () => {
+    render(withProviders(<LoginPage />));
+
+    const googleLogin = screen.getByRole("link", { name: "Continuar com Google" });
+    expect(googleLogin.className).toContain("bg-brand-subtle");
+    expect(googleLogin.querySelector("svg")).toBeTruthy();
+  });
 });
 
 describe("criação de conta", () => {

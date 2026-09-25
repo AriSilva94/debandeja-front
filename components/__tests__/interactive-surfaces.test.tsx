@@ -31,12 +31,14 @@ import { SecurityTab } from "@/components/settings/security-tab";
 import { PreferencesTab } from "@/components/settings/preferences-tab";
 
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+const route = vi.hoisted(() => ({ search: "" }));
 
 vi.mock("@/lib/hard-navigate", () => ({ hardNavigate: vi.fn() }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/",
   useRouter: () => router,
+  useSearchParams: () => new URLSearchParams(route.search),
 }));
 
 const BRANCHES: Branch[] = [
@@ -210,6 +212,7 @@ beforeEach(() => {
   preferencesState = DEFAULT_PREFERENCES;
   router.push.mockClear();
   router.replace.mockClear();
+  route.search = "";
   vi.mocked(hardNavigate).mockClear();
   queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   vi.stubGlobal(
@@ -753,6 +756,7 @@ describe("nomes e estados acessíveis", () => {
           showMenuButton
           showSearch={false}
           showCrumbTenant={false}
+          label="Buscar"
           onToggleNav={vi.fn()}
         />,
       ),
@@ -760,6 +764,77 @@ describe("nomes e estados acessíveis", () => {
 
     expect(screen.getByRole("button", { name: "Abrir menu principal" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Notificações" })).toBeTruthy();
+  });
+
+  it("exibe o rótulo de busca recebido sem atalho visual", () => {
+    const props = {
+      tenantName: "Distribuidora Silva",
+      showMenuButton: false,
+      showSearch: true,
+      showCrumbTenant: false,
+      onToggleNav: vi.fn(),
+      label: "Buscar produtos e movimentações",
+    } as Parameters<typeof Header>[0];
+
+    render(withProviders(<Header {...props} />));
+
+    expect(
+      screen.getByRole("combobox", { name: "Buscar produtos e movimentações" }),
+    ).toBeTruthy();
+    expect(screen.queryByText("⌘K")).toBeNull();
+  });
+
+  it("busca produtos e abre a listagem filtrada", async () => {
+    render(
+      withProviders(
+        <Header
+          tenantName="Distribuidora Silva"
+          showMenuButton={false}
+          showSearch
+          showCrumbTenant={false}
+          label="Buscar produtos, SKUs ou movimentações"
+          onToggleNav={vi.fn()}
+        />,
+      ),
+    );
+
+    fireEvent.change(
+      screen.getByRole("combobox", {
+        name: "Buscar produtos, SKUs ou movimentações",
+      }),
+      { target: { value: "hei" } },
+    );
+
+    const result = await screen.findByRole("option", {
+      name: /Heineken Long Neck 330ml/i,
+    });
+    fireEvent.click(result);
+
+    expect(router.push).toHaveBeenCalledWith("/produtos?busca=hei");
+  });
+
+  it("abre o resultado ativo pelo teclado", async () => {
+    render(
+      withProviders(
+        <Header
+          tenantName="Distribuidora Silva"
+          showMenuButton={false}
+          showSearch
+          showCrumbTenant={false}
+          label="Buscar produtos, SKUs ou movimentações"
+          onToggleNav={vi.fn()}
+        />,
+      ),
+    );
+
+    const input = screen.getByRole("combobox", {
+      name: "Buscar produtos, SKUs ou movimentações",
+    });
+    fireEvent.change(input, { target: { value: "hei" } });
+    await screen.findByRole("option", { name: /Heineken Long Neck 330ml/i });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    expect(router.push).toHaveBeenCalledWith("/produtos?busca=hei");
   });
 
   it("nomeia os campos de busca das listagens", () => {
@@ -771,5 +846,14 @@ describe("nomes e estados acessíveis", () => {
 
     rerender(withProviders(<EquipePage />));
     expect(screen.getByRole("textbox", { name: "Buscar membros" })).toBeTruthy();
+  });
+
+  it("inicializa as listagens com a busca recebida na URL", () => {
+    route.search = "busca=heineken";
+    const { rerender } = render(withProviders(<ProdutosPage />));
+    expect((screen.getByRole("textbox", { name: "Buscar produtos" }) as HTMLInputElement).value).toBe("heineken");
+
+    rerender(withProviders(<EstoquePage />));
+    expect((screen.getByRole("textbox", { name: "Buscar estoque" }) as HTMLInputElement).value).toBe("heineken");
   });
 });

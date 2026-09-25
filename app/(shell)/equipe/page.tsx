@@ -10,19 +10,39 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FilterMenu } from "@/components/ui/filter-menu";
 import { FormError } from "@/components/ui/form-error";
 import { ErrorState, LoadingState } from "@/components/ui/query-state";
-import { RowActionsMenu, type RowAction } from "@/components/ui/row-actions-menu";
+import {
+  RowActionsMenu,
+  type RowAction,
+} from "@/components/ui/row-actions-menu";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { SearchField } from "@/components/ui/search-field";
-import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "@/components/ui/table";
 import { MemberFormModal } from "@/components/team/member-form-modal";
 import { errorMessage } from "@/lib/api/client";
 import { useMe } from "@/lib/api/hooks/use-me";
 import { usePermission, useSessionContext } from "@/lib/api/hooks/use-session";
-import { useRemoveMember, useResendInvite, useRolesMatrix, useTeam } from "@/lib/api/hooks/use-team";
+import {
+  useRemoveMember,
+  useResendInvite,
+  useRolesMatrix,
+  useTeam,
+} from "@/lib/api/hooks/use-team";
 import type { PermissionModule, Role, TeamMember } from "@/lib/api/types";
 import { avatarToneForIndex, initials } from "@/lib/avatar";
 import { formatLastAccess } from "@/lib/format";
-import { FULL_ACCESS_ROLES, ROLE_LABEL, ROLE_TONE, permissionLabel } from "@/lib/roles";
+import {
+  FULL_ACCESS_ROLES,
+  ROLE_LABEL,
+  ROLE_TONE,
+  permissionLabel,
+} from "@/lib/roles";
 
 const ALL_ROLES = "";
 const ROLES: Role[] = ["OWNER", "ADMIN", "MANAGER", "STOCKIST", "SALES"];
@@ -37,8 +57,10 @@ const MATRIX_COLUMNS: { module: PermissionModule; label: string }[] = [
 ];
 
 function memberStatus(member: TeamMember) {
-  if (member.status === "ACTIVE") return { tone: "success" as const, label: "Ativo" };
-  if (member.inviteExpired) return { tone: "error" as const, label: "Convite expirado" };
+  if (member.status === "ACTIVE")
+    return { tone: "success" as const, label: "Ativo" };
+  if (member.inviteExpired)
+    return { tone: "error" as const, label: "Convite expirado" };
   return { tone: "warning" as const, label: "Convite pendente" };
 }
 
@@ -69,7 +91,9 @@ export default function EquipePage() {
       members.filter(
         (member) =>
           (roleFilter === ALL_ROLES || member.role === roleFilter) &&
-          (!query || member.email.toLowerCase().includes(query) || member.name?.toLowerCase().includes(query)),
+          (!query ||
+            member.email.toLowerCase().includes(query) ||
+            member.name?.toLowerCase().includes(query)),
       ),
     [members, query, roleFilter],
   );
@@ -100,8 +124,20 @@ export default function EquipePage() {
   function actionsFor(member: TeamMember): RowAction[] {
     const invited = member.status === "INVITED";
     return [
-      { label: "Editar membro", icon: UserCog, onClick: () => openEdit(member) },
-      ...(invited ? [{ label: "Reenviar convite", icon: MailPlus, onClick: () => resend.mutate(member.id) }] : []),
+      {
+        label: "Editar membro",
+        icon: UserCog,
+        onClick: () => openEdit(member),
+      },
+      ...(invited
+        ? [
+            {
+              label: "Reenviar convite",
+              icon: MailPlus,
+              onClick: () => resend.mutate(member.id),
+            },
+          ]
+        : []),
       {
         label: invited ? "Cancelar convite" : "Remover da equipe",
         icon: UserMinus,
@@ -117,7 +153,9 @@ export default function EquipePage() {
     <div className="flex flex-col gap-4.5 p-4 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="mb-1 text-2xl font-semibold tracking-tight text-gray-900">Equipe</h1>
+          <h1 className="mb-1 text-2xl font-semibold tracking-tight text-gray-900">
+            Equipe
+          </h1>
           <p className="text-sm text-gray-500">
             Controle quem acessa cada filial e o que pode fazer.
           </p>
@@ -130,7 +168,11 @@ export default function EquipePage() {
         ) : null}
       </div>
 
-      <MemberFormModal open={modalOpen} onClose={() => setModalOpen(false)} member={editingMember} />
+      <MemberFormModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        member={editingMember}
+      />
       <ConfirmDialog
         open={Boolean(removeTarget)}
         onClose={() => setRemoveTarget(null)}
@@ -142,31 +184,51 @@ export default function EquipePage() {
         description={
           removingInvite ? (
             <>
-              O link enviado para <span className="font-medium text-gray-900">{removeTarget?.email}</span>{" "}
+              O link enviado para{" "}
+              <span className="font-medium text-gray-900">
+                {removeTarget?.email}
+              </span>{" "}
               deixa de funcionar e a vaga é liberada.
             </>
           ) : (
             <>
-              <span className="font-medium text-gray-900">{removeTarget?.name}</span> perde o acesso
-              imediatamente. O histórico de ações realizadas por este usuário é mantido para
-              auditoria.
+              <span className="font-medium text-gray-900">
+                {removeTarget?.name}
+              </span>{" "}
+              perde o acesso imediatamente. O histórico de ações realizadas por
+              este usuário é mantido para auditoria.
             </>
           )
         }
       />
 
       {actionError ? (
-        <FormError>{errorMessage(actionError, "Não foi possível concluir a ação. Tente novamente.")}</FormError>
+        <FormError>
+          {errorMessage(
+            actionError,
+            "Não foi possível concluir a ação. Tente novamente.",
+          )}
+        </FormError>
       ) : null}
       {resend.isSuccess ? (
-        <div role="status" className="rounded-[10px] border border-success-border bg-success-bg px-3 py-2.5 text-[13px] text-success-text">
-          Convite reenviado para {resend.data.email}. O link anterior deixou de funcionar.
+        <div
+          role="status"
+          className="rounded-[10px] border border-success-border bg-success-bg px-3 py-2.5 text-[13px] text-success-text"
+        >
+          Convite reenviado para {resend.data.email}. O link anterior deixou de
+          funcionar.
         </div>
       ) : null}
 
       <Card>
         <div className="flex flex-wrap items-center gap-2.5 border-b border-gray-200 p-3.5">
-          <SearchField label="Buscar membros" value={search} onChange={setSearch} placeholder="Buscar por nome ou e-mail" className="sm:w-70" />
+          <SearchField
+            label="Buscar membros"
+            value={search}
+            onChange={setSearch}
+            placeholder="Buscar por nome ou e-mail"
+            className="sm:w-70"
+          />
           <FilterMenu
             label={selectedRole ? ROLE_LABEL[selectedRole] : "Função"}
             active={roleFilter !== ALL_ROLES}
@@ -182,13 +244,21 @@ export default function EquipePage() {
             ]}
           />
           <div className="flex-1" />
-          <span className="text-[13px] text-gray-500">{team.data ? seatsLabel : null}</span>
+          <span className="text-[13px] text-gray-500">
+            {team.data ? seatsLabel : null}
+          </span>
         </div>
 
         {team.isPending ? (
-          <LoadingState title="Carregando equipe" description="Buscando os membros da sua distribuidora." />
+          <LoadingState
+            title="Carregando equipe"
+            description="Buscando os membros da sua distribuidora."
+          />
         ) : team.isError ? (
-          <ErrorState title="Não foi possível carregar a equipe" onRetry={() => team.refetch()} />
+          <ErrorState
+            title="Não foi possível carregar a equipe"
+            onRetry={() => team.refetch()}
+          />
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={Search}
@@ -210,31 +280,50 @@ export default function EquipePage() {
             <TableBody>
               {filtered.map((member, index) => {
                 const status = memberStatus(member);
-                const manageable = canManage && member.role !== "OWNER" && member.email !== myEmail;
+                const manageable =
+                  canManage &&
+                  member.role !== "OWNER" &&
+                  member.email !== myEmail;
                 return (
                   <TableRow key={member.id}>
                     <TableCell>
                       <div className="flex items-center gap-2.5">
-                        <Avatar initials={initials(member.name ?? member.email)} tone={avatarToneForIndex(index)} />
+                        <Avatar
+                          initials={initials(member.name ?? member.email)}
+                          tone={avatarToneForIndex(index)}
+                        />
                         <div>
-                          <div className="font-medium text-gray-900">{member.name ?? "Convite pendente"}</div>
-                          <div className="mt-0.25 text-xs text-gray-400">{member.email}</div>
+                          <div className="font-medium text-gray-900">
+                            {member.name ?? "Convite pendente"}
+                          </div>
+                          <div className="mt-px text-xs text-gray-400">
+                            {member.email}
+                          </div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge tone={ROLE_TONE[member.role]}>{ROLE_LABEL[member.role]}</Badge>
+                      <Badge tone={ROLE_TONE[member.role]}>
+                        {ROLE_LABEL[member.role]}
+                      </Badge>
                     </TableCell>
-                    <TableCell className="text-gray-600">{memberBranches(member)}</TableCell>
+                    <TableCell className="text-gray-600">
+                      {memberBranches(member)}
+                    </TableCell>
                     <TableCell>
                       <Badge tone={status.tone}>{status.label}</Badge>
                     </TableCell>
                     <TableCell className="text-gray-500">
-                      {member.status === "ACTIVE" ? formatLastAccess(member.lastAccessAt) : "—"}
+                      {member.status === "ACTIVE"
+                        ? formatLastAccess(member.lastAccessAt)
+                        : "—"}
                     </TableCell>
                     <TableCell align="right">
                       {manageable ? (
-                        <RowActionsMenu label={`Ações de ${member.name ?? member.email}`} actions={actionsFor(member)} />
+                        <RowActionsMenu
+                          label={`Ações de ${member.name ?? member.email}`}
+                          actions={actionsFor(member)}
+                        />
                       ) : null}
                     </TableCell>
                   </TableRow>
@@ -247,7 +336,9 @@ export default function EquipePage() {
 
       <Card>
         <div className="border-b border-gray-200 px-4.5 py-4">
-          <div className="text-[15.5px] font-semibold">Funções e permissões</div>
+          <div className="text-[15.5px] font-semibold">
+            Funções e permissões
+          </div>
           <div className="mt-0.5 text-[12.5px] text-gray-400">
             Resumo do que cada função pode fazer nas filiais permitidas.
           </div>
@@ -271,8 +362,16 @@ export default function EquipePage() {
                     <Badge tone={ROLE_TONE[role]}>{ROLE_LABEL[role]}</Badge>
                   </TableCell>
                   {MATRIX_COLUMNS.map((column) => (
-                    <TableCell key={column.module} align="center" className="text-gray-600">
-                      {permissionLabel(role, column.module, matrix.data[role][column.module])}
+                    <TableCell
+                      key={column.module}
+                      align="center"
+                      className="text-gray-600"
+                    >
+                      {permissionLabel(
+                        role,
+                        column.module,
+                        matrix.data[role][column.module],
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -280,9 +379,15 @@ export default function EquipePage() {
             </TableBody>
           </Table>
         ) : matrix.isError ? (
-          <ErrorState title="Não foi possível carregar as permissões" onRetry={() => matrix.refetch()} />
+          <ErrorState
+            title="Não foi possível carregar as permissões"
+            onRetry={() => matrix.refetch()}
+          />
         ) : (
-          <LoadingState title="Carregando permissões" description="Buscando o que cada função pode fazer." />
+          <LoadingState
+            title="Carregando permissões"
+            description="Buscando o que cada função pode fazer."
+          />
         )}
       </Card>
     </div>
