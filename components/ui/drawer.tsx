@@ -30,11 +30,8 @@ export function Drawer({
 
   return (
     <div className="fixed inset-0 z-100 flex justify-end bg-gray-900/45">
-      <button
-        type="button"
+      <div
         aria-hidden="true"
-        tabIndex={-1}
-        onClick={onClose}
         className="flex-1 cursor-default"
       />
       <div

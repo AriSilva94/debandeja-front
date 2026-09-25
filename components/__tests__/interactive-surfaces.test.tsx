@@ -281,6 +281,20 @@ describe("superfícies sobrepostas", () => {
     fireEvent.keyDown(document, { key: "Escape" });
     expect(onClose).toHaveBeenCalledOnce();
   });
+
+  it("não fecha o drawer ao clicar fora", () => {
+    const onClose = vi.fn();
+
+    const { container } = render(
+      <Drawer open onClose={onClose} title="Editar produto">
+        Conteúdo
+      </Drawer>,
+    );
+
+    fireEvent.click(container.querySelector("[aria-hidden='true']")!);
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });
 
 describe("reinicialização de formulários", () => {
