@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Search,
@@ -108,6 +108,14 @@ function displayStatus(product: Product): DisplayStatus {
 }
 
 export default function ProdutosPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProdutosPageContent />
+    </Suspense>
+  );
+}
+
+function ProdutosPageContent() {
   const searchParams = useSearchParams();
   const searchFromUrl = searchParams.get("busca") ?? "";
 

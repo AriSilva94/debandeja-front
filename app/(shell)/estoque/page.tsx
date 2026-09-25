@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,14 @@ const STATUS_BADGE_TONE: Record<StockLevel, "success" | "warning" | "error"> = {
 type MovementTarget = { productId?: string; branchId?: string };
 
 export default function EstoquePage() {
+  return (
+    <Suspense fallback={null}>
+      <EstoquePageContent />
+    </Suspense>
+  );
+}
+
+function EstoquePageContent() {
   const searchParams = useSearchParams();
   const searchFromUrl = searchParams.get("busca") ?? "";
 
