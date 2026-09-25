@@ -71,6 +71,20 @@ function formatPriceInput(price: string) {
   return Number(price).toFixed(2).replace(".", ",");
 }
 
+function suggestedSku(category: string, name: string) {
+  const abbreviate = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, " ")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => part.slice(0, 3));
+  return [...abbreviate(category).slice(0, 1), ...abbreviate(name).slice(0, 3), "001"].join("-");
+}
+
 function NewProductDrawerContent({
   onClose,
   product,
@@ -94,6 +108,9 @@ function NewProductDrawerContent({
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(
     () => categories.find((category) => category.id === product?.categoryId) ?? null,
   );
+  const [productName, setProductName] = useState(product?.name ?? "");
+  const [sku, setSku] = useState(product?.sku ?? "");
+  const [skuCustomized, setSkuCustomized] = useState(Boolean(product));
   const formRef = useRef<HTMLFormElement>(null);
   const save = useSaveProduct();
 
@@ -101,6 +118,8 @@ function NewProductDrawerContent({
     selectedCategory ??
     categories.find((item) => item.id === product?.categoryId) ??
     null;
+  const automaticSku = category && productName.trim().length >= 2 ? suggestedSku(category.name, productName) : "";
+  const displayedSku = skuCustomized ? sku : automaticSku;
 
   function fieldErrorId(name: keyof FieldErrors) {
     return `${name}-error`;
@@ -119,7 +138,7 @@ function NewProductDrawerContent({
     const errors: FieldErrors = {};
     if (field("productName").length < 2)
       errors.productName = "Informe um nome com pelo menos 2 caracteres.";
-    if (!field("sku")) errors.sku = "Informe o SKU do produto.";
+    if (skuCustomized && !field("sku")) errors.sku = "Informe o SKU do produto.";
     if (!category) errors.category = "Selecione ou adicione uma categoria.";
     const price = parsePrice(field("price"));
     if (!Number.isFinite(price) || price <= 0)
@@ -159,7 +178,7 @@ function NewProductDrawerContent({
     }
 
     const input: ProductInput = {
-      sku: field("sku"),
+      sku: skuCustomized ? field("sku") : undefined,
       name: field("productName"),
       brand: field("brand") || undefined,
       categoryId: category!.id,
@@ -213,6 +232,9 @@ function NewProductDrawerContent({
     setHasChanges(false);
     setSaved(false);
     setSelectedCategory(null);
+    setProductName("");
+    setSku("");
+    setSkuCustomized(false);
   }
 
   function handleCategoryChange(category: ProductCategory) {
@@ -316,7 +338,8 @@ function NewProductDrawerContent({
                   ? fieldErrorId("productName")
                   : undefined
               }
-              defaultValue={product?.name}
+              value={productName}
+              onChange={(event) => setProductName(event.target.value)}
               placeholder="Heineken Long Neck 330ml"
             />
             {fieldErrors.productName ? (
@@ -339,9 +362,16 @@ function NewProductDrawerContent({
                     fieldErrors.sku ? fieldErrorId("sku") : undefined
                   }
                   className="tabular-nums"
-                  defaultValue={product?.sku}
-                  placeholder="BEER-001"
+                  value={displayedSku}
+                  placeholder="Será sugerido automaticamente"
+                  onChange={(event) => {
+                    setSku(event.target.value.toUpperCase());
+                    setSkuCustomized(true);
+                  }}
                 />
+                {!skuCustomized && automaticSku ? (
+                  <FieldHint>Sugerido a partir da categoria e do nome. Você pode editar.</FieldHint>
+                ) : null}
                 {fieldErrors.sku ? (
                   <FieldError>
                     <span id={fieldErrorId("sku")}>{fieldErrors.sku}</span>

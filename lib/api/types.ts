@@ -83,7 +83,7 @@ export type ProductCategory = {
 export type ProductList = Paginated<Product> & { counts: Record<ProductTab, number> };
 
 export type ProductInput = {
-  sku: string;
+  sku?: string;
   name: string;
   brand?: string;
   categoryId: string;
