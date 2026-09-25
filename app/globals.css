@@ -1,26 +1,139 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f6f1;
+  --foreground: #12231c;
+
+  --color-brand-dark: #023b2a;
+  --color-brand: #06543c;
+  --color-brand-subtle: #edf6f0;
+  --color-brand-subtle-border: #c9e1d2;
+  --color-accent: #d89a18;
+  --color-accent-dark: #a96808;
+  --color-accent-subtle: #fff7df;
+  --color-accent-subtle-border: #f2d590;
+  --color-canvas-dark: #062d22;
+  --color-canvas-dark-border: #174c3d;
+
+  --color-gray-25: #fcfcfd;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f2f4f7;
+  --color-gray-200: #e4e7ec;
+  --color-gray-300: #d0d5dd;
+  --color-gray-400: #98a2b3;
+  --color-gray-500: #667085;
+  --color-gray-600: #475467;
+  --color-gray-700: #344054;
+  --color-gray-900: #101828;
+
+  --color-success: #16a34a;
+  --color-success-text: #067647;
+  --color-success-bg: #ecfdf3;
+  --color-success-border: #abefc6;
+
+  --color-warning: #f59e0b;
+  --color-warning-text: #b54708;
+  --color-warning-bg: #fffaeb;
+  --color-warning-border: #fedf89;
+
+  --color-error: #dc2626;
+  --color-error-text: #b42318;
+  --color-error-bg: #fef3f2;
+  --color-error-border: #fecdca;
+
+  --color-info-text: #175cd3;
+  --color-info-bg: #eff8ff;
+  --color-info-border: #b2ddff;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-sans: var(--font-inter);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-brand-dark: var(--color-brand-dark);
+  --color-brand: var(--color-brand);
+  --color-brand-subtle: var(--color-brand-subtle);
+  --color-brand-subtle-border: var(--color-brand-subtle-border);
+  --color-accent: var(--color-accent);
+  --color-accent-dark: var(--color-accent-dark);
+  --color-accent-subtle: var(--color-accent-subtle);
+  --color-accent-subtle-border: var(--color-accent-subtle-border);
+  --color-canvas-dark: var(--color-canvas-dark);
+  --color-canvas-dark-border: var(--color-canvas-dark-border);
+
+  --color-gray-25: var(--color-gray-25);
+  --color-gray-50: var(--color-gray-50);
+  --color-gray-100: var(--color-gray-100);
+  --color-gray-200: var(--color-gray-200);
+  --color-gray-300: var(--color-gray-300);
+  --color-gray-400: var(--color-gray-400);
+  --color-gray-500: var(--color-gray-500);
+  --color-gray-600: var(--color-gray-600);
+  --color-gray-700: var(--color-gray-700);
+  --color-gray-900: var(--color-gray-900);
+
+  --color-success: var(--color-success);
+  --color-success-text: var(--color-success-text);
+  --color-success-bg: var(--color-success-bg);
+  --color-success-border: var(--color-success-border);
+
+  --color-warning: var(--color-warning);
+  --color-warning-text: var(--color-warning-text);
+  --color-warning-bg: var(--color-warning-bg);
+  --color-warning-border: var(--color-warning-border);
+
+  --color-error: var(--color-error);
+  --color-error-text: var(--color-error-text);
+  --color-error-bg: var(--color-error-bg);
+  --color-error-border: var(--color-error-border);
+
+  --color-info-text: var(--color-info-text);
+  --color-info-bg: var(--color-info-bg);
+  --color-info-border: var(--color-info-border);
+
+  --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-md: 0 8px 24px rgba(16, 24, 40, 0.12);
+  --shadow-lg: 0 20px 48px rgba(16, 24, 40, 0.18);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: var(--color-accent-subtle-border);
+  color: var(--color-brand-dark);
+}
+
+html {
+  scrollbar-color: var(--color-brand-subtle-border) transparent;
+}
+
+input,
+textarea {
+  caret-color: var(--color-brand);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #eef1f6 0%, #f7f9fc 40%, #eef1f6 80%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    background: #eef1f6;
+  }
 }
