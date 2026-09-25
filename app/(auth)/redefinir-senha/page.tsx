@@ -42,8 +42,14 @@ function RedefinirSenhaContent() {
           </div>
           <h2 className="mb-2 text-xl font-semibold text-gray-900">Link inválido</h2>
           <p className="text-sm leading-relaxed text-gray-500">
-            Esse link de redefinição está incompleto.
+            Esse link de redefinição está incompleto. Peça um novo para criar sua senha.
           </p>
+          <Link href="/recuperar-senha" className={cn(buttonVariants("primary", "lg"), "mt-5.5 w-full")}>
+            Pedir novo link
+          </Link>
+          <Link href="/login" className="mt-4 inline-block text-[13px] font-semibold text-brand hover:text-brand-dark">
+            Voltar para o login
+          </Link>
       </div>
     );
   }

@@ -2,15 +2,15 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
+import { MailCheck } from "lucide-react";
 import { AuthLayout, AuthPanel, AuthFormPane } from "@/components/auth/auth-layout";
 import { StepIndicator } from "@/components/auth/step-indicator";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/cn";
-import { useRegister } from "@/lib/api/hooks/use-auth";
-import { ApiError } from "@/lib/api/client";
+import { useRegister, useResendVerification } from "@/lib/api/hooks/use-auth";
+import { ApiError, errorMessage } from "@/lib/api/client";
 import { FormError } from "@/components/ui/form-error";
 
 const STEPS = ["Conta", "Distribuidora", "Filial", "Finalizado"];
@@ -28,6 +28,7 @@ const STRENGTH_LABEL = ["Muito fraca", "Fraca", "Razoável", "Boa", "Senha forte
 
 export default function CriarContaPage() {
   const register = useRegister();
+  const resend = useResendVerification();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -60,15 +61,62 @@ export default function CriarContaPage() {
         />
         <AuthFormPane>
           <div className="text-center">
-              <div className="mx-auto mb-4.5 flex h-11.5 w-11.5 items-center justify-center rounded-full bg-success-bg">
-                <CheckCircle2 size={22} className="text-success" />
-              </div>
-              <h2 className="mb-2 text-xl font-semibold text-gray-900">Confirme seu e-mail</h2>
-              <p className="text-sm leading-relaxed text-gray-500">
-                Enviamos um link de confirmação para{" "}
-                <span className="font-medium text-gray-900">{email}</span>. Clique nele para
-                continuar seu cadastro.
+            <div className="mx-auto mb-4.5 flex h-11.5 w-11.5 items-center justify-center rounded-full bg-brand-subtle">
+              <MailCheck size={22} className="text-brand" />
+            </div>
+            <h2 className="mb-2 text-xl font-semibold text-gray-900">Confirme seu e-mail</h2>
+            <p className="text-sm leading-relaxed text-gray-500">
+              Enviamos um link de confirmação para{" "}
+              <span className="font-medium text-gray-900">{email}</span>. Abra o e-mail e clique em
+              <span className="font-medium text-gray-900"> Confirmar e-mail</span> para continuar o cadastro.
+            </p>
+            <p className="mt-3 text-[13px] leading-relaxed text-gray-500">
+              Não encontrou? Confira a caixa de spam.
+            </p>
+
+            <Link href="/login" className={cn(buttonVariants("primary", "lg"), "mt-6.5 w-full")}>
+              Ir para o login
+            </Link>
+
+            {resend.isSuccess ? (
+              <p role="status" className="mt-4 text-[13px] font-medium text-success-text">
+                Link reenviado. Confira sua caixa de entrada.
               </p>
+            ) : null}
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[13px]">
+              {resend.isSuccess ? null : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => resend.mutate(email)}
+                    disabled={resend.isPending}
+                    className="font-semibold text-brand hover:text-brand-dark disabled:opacity-60"
+                  >
+                    {resend.isPending ? "Reenviando…" : "Reenviar e-mail"}
+                  </button>
+                  <span aria-hidden className="text-gray-300">·</span>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  resend.reset();
+                  register.reset();
+                }}
+                className="font-semibold text-gray-600 hover:text-gray-900"
+              >
+                Usar outro e-mail
+              </button>
+              <span aria-hidden className="text-gray-300">·</span>
+              <Link href="/" className="font-semibold text-gray-600 hover:text-gray-900">
+                Voltar para o início
+              </Link>
+            </div>
+            {resend.isError ? (
+              <p role="alert" className="mt-2 text-[13px] text-error-text">
+                {errorMessage(resend.error, "Não foi possível reenviar agora. Tente de novo em instantes.")}
+              </p>
+            ) : null}
           </div>
         </AuthFormPane>
       </AuthLayout>

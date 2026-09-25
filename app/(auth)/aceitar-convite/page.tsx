@@ -4,7 +4,9 @@ import { Suspense, useEffect, useRef, useState, type FormEvent, useCallback } fr
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, CheckCircle2, Loader2, MailCheck } from "lucide-react";
 import { AuthLayout, AuthPanel, AuthFormPane } from "@/components/auth/auth-layout";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
 import { Input, Label } from "@/components/ui/input";
 import { useAcceptInvite } from "@/lib/api/hooks/use-auth";
 import { ApiError } from "@/lib/api/client";
@@ -88,8 +90,12 @@ function AceitarConviteContent() {
           </div>
           <h2 className="mb-2 text-xl font-semibold text-gray-900">Confirme seu e-mail</h2>
           <p className="text-sm leading-relaxed text-gray-500">
-            Sua conta já existia e o convite foi vinculado a ela. Confirme seu e-mail para entrar.
+            Sua conta já existia e o convite foi vinculado a ela. Confirme seu e-mail para entrar:
+            na tela de login você pode pedir um novo link de confirmação.
           </p>
+          <Link href="/login" className={cn(buttonVariants("primary", "lg"), "mt-5.5 w-full")}>
+            Ir para o login
+          </Link>
       </div>
     );
   }
