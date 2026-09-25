@@ -280,7 +280,11 @@ function NewProductDrawerContent({
           id="new-product-form"
           noValidate
           onSubmit={handleSubmit}
-          onChange={() => setHasChanges(true)}
+          onChange={(event) => {
+            if (event.target.getAttribute("name") !== "category") {
+              setHasChanges(true);
+            }
+          }}
           onBlur={(event) => {
             const name = event.target.getAttribute("name");
             if (

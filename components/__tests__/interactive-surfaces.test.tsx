@@ -332,6 +332,28 @@ describe("reinicialização de formulários", () => {
     await waitFor(() => expect((category as HTMLInputElement).value).toBe("Outros"));
   });
 
+  it("mantém o foco na busca de categorias durante a digitação", () => {
+    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[{ id: "c-1", name: "Cervejas" }]} />));
+
+    const category = screen.getByLabelText("Categoria");
+    (category as HTMLInputElement).focus();
+    fireEvent.change(category, { target: { value: "c" } });
+
+    expect(document.activeElement).toBe(category);
+    expect((category as HTMLInputElement).value).toBe("c");
+  });
+
+  it("não considera a busca de categoria como alteração do cadastro", () => {
+    const onClose = vi.fn();
+    render(withProviders(<NewProductDrawer open onClose={onClose} product={null} categories={[{ id: "c-1", name: "Cervejas" }]} />));
+
+    fireEvent.change(screen.getByLabelText("Categoria"), { target: { value: "c" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("dialog", { name: "Descartar alterações?" })).toBeNull();
+  });
+
   it("pede confirmação antes de descartar alterações", () => {
     render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[{ id: "c-1", name: "Cervejas" }]} />));
 
