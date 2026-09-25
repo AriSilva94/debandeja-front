@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, Loader2, Plus, Search } from "lucide-react";
+import { Check, ChevronDown, Loader2, Search } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useClickOutside } from "@/lib/use-click-outside";
 import type { ProductCategory } from "@/lib/api/types";
@@ -19,11 +19,9 @@ type CategoryComboboxProps = {
   categories: ProductCategory[];
   value: ProductCategory | null;
   loading?: boolean;
-  creating?: boolean;
   error?: boolean;
   describedBy?: string;
   onChange: (category: ProductCategory) => void;
-  onCreate: (name: string) => void;
 };
 
 export function CategoryCombobox({
@@ -31,11 +29,9 @@ export function CategoryCombobox({
   categories,
   value,
   loading = false,
-  creating = false,
   error = false,
   describedBy,
   onChange,
-  onCreate,
 }: CategoryComboboxProps) {
   const listboxId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -47,7 +43,7 @@ export function CategoryCombobox({
     if (!term) return categories;
     return categories.filter((category) => normalize(category.name).includes(term));
   }, [categories, query]);
-  const canCreate = query.trim().length >= 2 && !categories.some((category) => normalize(category.name) === normalize(query));
+  const otherCategory = categories.find((category) => normalize(category.name) === "outros");
 
   function close() {
     setOpen(false);
@@ -83,7 +79,7 @@ export function CategoryCombobox({
         aria-describedby={describedBy}
         autoComplete="off"
         required
-        disabled={loading || creating}
+        disabled={loading}
         value={open ? query : value?.name ?? ""}
         placeholder={loading ? "Carregando categorias…" : "Buscar categoria"}
         onFocus={() => setOpen(true)}
@@ -98,7 +94,7 @@ export function CategoryCombobox({
           error ? "border-error focus:ring-error/15" : "border-gray-200 focus:border-brand focus:ring-brand/15",
         )}
       />
-      {loading || creating ? (
+      {loading ? (
         <Loader2 size={15} className="absolute right-3 top-1/2 animate-spin -translate-y-1/2 text-gray-400" />
       ) : (
         <ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -120,22 +116,20 @@ export function CategoryCombobox({
               </li>
             ))}
           </ul>
-          {matches.length === 0 && !canCreate ? (
-            <p className="px-2.5 py-2 text-[13px] text-gray-500">Nenhuma categoria encontrada.</p>
-          ) : null}
-          {canCreate ? (
-            <button
-              type="button"
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => {
-                onCreate(query.trim());
-                close();
-              }}
-              className="mt-1 flex w-full items-center gap-2 rounded-lg border-t border-gray-100 px-2.5 py-2 text-left text-[13.5px] font-medium text-brand hover:bg-brand-light"
-            >
-              <Plus size={15} aria-hidden="true" />
-              Adicionar “{query.trim()}”
-            </button>
+          {matches.length === 0 ? (
+            <div className="border-t border-gray-100 px-2.5 py-2 text-[13px] text-gray-500">
+              <p>Nenhuma categoria encontrada.</p>
+              {otherCategory ? (
+                <button
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => select(otherCategory)}
+                  className="mt-1 font-medium text-brand hover:text-brand-dark"
+                >
+                  Usar Outros
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
       ) : null}

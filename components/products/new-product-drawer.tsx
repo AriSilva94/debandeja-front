@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { FormError } from "@/components/ui/form-error";
 import { cn } from "@/lib/cn";
 import { errorMessage } from "@/lib/api/client";
-import { useCreateProductCategory, useSaveProduct } from "@/lib/api/hooks/use-products";
+import { useSaveProduct } from "@/lib/api/hooks/use-products";
 import type { Product, ProductCategory, ProductInput, ProductUnit } from "@/lib/api/types";
 import { useBranch } from "@/lib/branch-context";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -91,13 +91,11 @@ function NewProductDrawerContent({
   const [initialStockError, setInitialStockError] = useState<string | null>(
     null,
   );
-  const [categoryError, setCategoryError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(
     () => categories.find((category) => category.id === product?.categoryId) ?? null,
   );
   const formRef = useRef<HTMLFormElement>(null);
   const save = useSaveProduct();
-  const createCategory = useCreateProductCategory();
 
   const category =
     selectedCategory ??
@@ -215,23 +213,12 @@ function NewProductDrawerContent({
     setHasChanges(false);
     setSaved(false);
     setSelectedCategory(null);
-    setCategoryError(null);
   }
 
   function handleCategoryChange(category: ProductCategory) {
     setSelectedCategory(category);
-    setCategoryError(null);
     setFieldErrors((current) => ({ ...current, category: undefined }));
     setHasChanges(true);
-  }
-
-  function handleCreateCategory(name: string) {
-    setCategoryError(null);
-    createCategory.mutate(name, {
-      onSuccess: handleCategoryChange,
-      onError: (createError) =>
-        setCategoryError(errorMessage(createError, "Não foi possível adicionar a categoria. Tente novamente.")),
-    });
   }
 
   return (
@@ -372,13 +359,11 @@ function NewProductDrawerContent({
                   categories={categories}
                   value={category}
                   loading={categoriesLoading}
-                  creating={createCategory.isPending}
                   error={Boolean(fieldErrors.category)}
                   describedBy={
                     fieldErrors.category ? fieldErrorId("category") : undefined
                   }
                   onChange={handleCategoryChange}
-                  onCreate={handleCreateCategory}
                 />
                 {fieldErrors.category ? (
                   <FieldError>
@@ -387,7 +372,6 @@ function NewProductDrawerContent({
                     </span>
                   </FieldError>
                 ) : null}
-                {categoryError ? <FieldError>{categoryError}</FieldError> : null}
               </div>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

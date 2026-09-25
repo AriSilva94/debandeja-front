@@ -30,14 +30,6 @@ export function useProductCategories() {
   });
 }
 
-export function useCreateProductCategory() {
-  const invalidate = useInvalidate(["products"]);
-  return useMutation({
-    mutationFn: (name: string) => api.post<ProductCategory>("/products/categories", { name }),
-    onSuccess: invalidate,
-  });
-}
-
 function useInvalidateCatalog() {
   return useInvalidate(["products", "stock", "alerts", "dashboard", "billing"]);
 }

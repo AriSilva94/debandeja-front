@@ -322,18 +322,14 @@ describe("reinicialização de formulários", () => {
     expect(document.activeElement).toBe(price);
   });
 
-  it("permite criar e selecionar uma categoria que não está na busca", async () => {
-    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[{ id: "c-1", name: "Cervejas" }]} />));
+  it("oferece Outros quando não encontra uma categoria", async () => {
+    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[{ id: "c-1", name: "Cervejas" }, { id: "c-2", name: "Outros" }]} />));
 
     const category = screen.getByLabelText("Categoria");
     fireEvent.change(category, { target: { value: "Energéticos" } });
-    fireEvent.click(screen.getByRole("button", { name: "Adicionar “Energéticos”" }));
+    fireEvent.click(screen.getByRole("button", { name: "Usar Outros" }));
 
-    await waitFor(() => expect((category as HTMLInputElement).value).toBe("Energéticos"));
-    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
-      "/api/backend/products/categories",
-      expect.objectContaining({ method: "POST" }),
-    );
+    await waitFor(() => expect((category as HTMLInputElement).value).toBe("Outros"));
   });
 
   it("pede confirmação antes de descartar alterações", () => {
