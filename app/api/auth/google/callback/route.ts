@@ -6,6 +6,7 @@ import {
 } from "@/lib/server/resolve-destination";
 import {
   googleCallbackUrl,
+  googleCallbackDestinationUrl,
   googleLoginErrorRedirectUrl,
   googleOAuthCookieOptions,
   GOOGLE_OAUTH_NONCE_COOKIE,
@@ -88,7 +89,9 @@ export async function GET(request: NextRequest) {
       (await backendResponse.json()) as Parameters<typeof establishSessionAndResolveDestination>[0],
     );
     return clearGoogleOAuthCookies(
-      NextResponse.redirect(new URL(destinationPath(destination), request.url)),
+      NextResponse.redirect(
+        googleCallbackDestinationUrl(destinationPath(destination), request.url),
+      ),
     );
   } catch (error) {
     logGoogleOAuthFailure("unexpected", {

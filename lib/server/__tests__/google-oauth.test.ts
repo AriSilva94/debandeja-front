@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createGoogleAuthorizationUrl,
   googleCallbackUrl,
+  googleCallbackDestinationUrl,
   googleLoginErrorRedirectUrl,
 } from "@/lib/server/google-oauth";
 
@@ -56,5 +57,19 @@ describe("createGoogleAuthorizationUrl", () => {
         "https://0.0.0.0:3000/api/auth/google/callback",
       ),
     ).toBe("https://dev.debandeja.store/login?erro=google");
+  });
+
+  it("redireciona sucessos para a origem configurada do callback", () => {
+    vi.stubEnv(
+      "GOOGLE_REDIRECT_URI",
+      "https://dev.debandeja.store/api/auth/google/callback",
+    );
+
+    expect(
+      googleCallbackDestinationUrl(
+        "/onboarding",
+        "https://0.0.0.0:3000/api/auth/google/callback",
+      ),
+    ).toBe("https://dev.debandeja.store/onboarding");
   });
 });
