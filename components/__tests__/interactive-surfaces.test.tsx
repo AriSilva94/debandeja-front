@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import LoginPage from "@/app/(auth)/login/page";
 import ProdutosPage from "@/app/(shell)/produtos/page";
@@ -295,11 +295,51 @@ describe("reinicialização de formulários", () => {
     expect((screen.getByRole("switch") as HTMLInputElement).checked).toBe(true);
   });
 
-  it("pede estoque inicial por filial só ao cadastrar produto novo", async () => {
+  it("mostra estoque inicial por filial apenas quando solicitado no cadastro novo", async () => {
     render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[]} />));
+
+    expect(screen.queryByRole("textbox", { name: "Estoque inicial da filial Matriz" })).toBeNull();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Adicionar estoque inicial" }));
 
     expect(await screen.findByRole("textbox", { name: "Estoque inicial da filial Matriz" })).toBeTruthy();
     expect(screen.getByRole("textbox", { name: "Estoque inicial da filial Filial Norte" })).toBeTruthy();
+  });
+
+  it("destaca e foca o primeiro campo inválido ao salvar", () => {
+    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[]} />));
+
+    fireEvent.change(screen.getByLabelText("Nome do produto"), { target: { value: "Água" } });
+    fireEvent.change(screen.getByLabelText("SKU"), { target: { value: "AGUA-001" } });
+    fireEvent.change(screen.getByLabelText("Categoria"), { target: { value: "Águas" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar produto" }));
+
+    const price = screen.getByLabelText("Preço de venda");
+    expect(price.getAttribute("aria-invalid")).toBe("true");
+    expect(document.activeElement).toBe(price);
+  });
+
+  it("pede confirmação antes de descartar alterações", () => {
+    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[]} />));
+
+    fireEvent.change(screen.getByLabelText("Nome do produto"), { target: { value: "Água" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(screen.getByRole("dialog", { name: "Descartar alterações?" })).toBeTruthy();
+  });
+
+  it("confirma o produto salvo e permite cadastrar outro", async () => {
+    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[]} />));
+
+    fireEvent.change(screen.getByLabelText("Nome do produto"), { target: { value: "Água" } });
+    fireEvent.change(screen.getByLabelText("SKU"), { target: { value: "AGUA-001" } });
+    fireEvent.change(screen.getByLabelText("Categoria"), { target: { value: "Águas" } });
+    fireEvent.change(screen.getByLabelText("Preço de venda"), { target: { value: "5,00" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar produto" }));
+
+    await screen.findByText("Produto cadastrado");
+    expect(screen.getByRole("button", { name: "Cadastrar outro" })).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Salvar produto" })).toBeNull());
   });
 
   it("restaura o status da filial ao reabrir o drawer", () => {
