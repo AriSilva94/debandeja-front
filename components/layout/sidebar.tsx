@@ -3,9 +3,19 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronsUpDown, Building2, Check, Plus, ChevronDown } from "lucide-react";
+import {
+  ChevronsUpDown,
+  Building2,
+  Check,
+  Plus,
+  ChevronDown,
+} from "lucide-react";
 import { cn } from "@/lib/cn";
-import { ALL_BRANCHES_VALUE, useBranch, type BranchOption } from "@/lib/branch-context";
+import {
+  ALL_BRANCHES_VALUE,
+  useBranch,
+  type BranchOption,
+} from "@/lib/branch-context";
 import { useMyTenants, useSelectTenant } from "@/lib/api/hooks/use-me";
 import { SCREEN_PATH } from "@/lib/post-auth";
 import { usePermission, useSessionContext } from "@/lib/api/hooks/use-session";
@@ -32,8 +42,13 @@ export function Sidebar({ collapsed, tenantName }: SidebarProps) {
   const can = usePermission();
   const alertsCount = useStockAlerts().data?.length ?? 0;
   const subscription = session?.subscription;
-  const trial = subscription?.status === "TRIAL" && subscription.trialDaysRemaining !== null ? subscription : null;
-  const visibleNav = NAV_ITEMS.filter((item) => !item.requires || can(item.requires, "READ"));
+  const trial =
+    subscription?.status === "TRIAL" && subscription.trialDaysRemaining !== null
+      ? subscription
+      : null;
+  const visibleNav = NAV_ITEMS.filter(
+    (item) => !item.requires || can(item.requires, "READ"),
+  );
   const switcherRef = useRef<HTMLDivElement>(null);
 
   useClickOutside(
@@ -56,7 +71,9 @@ export function Sidebar({ collapsed, tenantName }: SidebarProps) {
         <BrandLogo variant="mark" className="w-11 rounded-[10px]" priority />
         {showLabels ? (
           <div className="min-w-0">
-            <div className="text-[17px] font-bold tracking-[-0.02em] text-brand-dark">Debandeja</div>
+            <div className="text-[17px] font-bold tracking-[-0.02em] text-brand-dark">
+              Debandeja
+            </div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-accent-dark">
               Gestão de bebidas
             </div>
@@ -84,7 +101,11 @@ export function Sidebar({ collapsed, tenantName }: SidebarProps) {
                     {tenantName}
                   </span>
                   <span className="block text-[11px] text-gray-400">
-                    {subscription ? (subscription.onTrial ? "Trial" : `Plano ${subscription.planName}`) : null}
+                    {subscription
+                      ? subscription.onTrial
+                        ? "Trial"
+                        : `Plano ${subscription.planName}`
+                      : null}
                   </span>
                 </span>
               </span>
@@ -101,7 +122,9 @@ export function Sidebar({ collapsed, tenantName }: SidebarProps) {
             >
               <span className="flex min-w-0 items-center gap-2">
                 <Building2 size={14} className="shrink-0 text-brand" />
-                <span className="truncate text-[12.5px] font-medium text-gray-700">{branchLabel}</span>
+                <span className="truncate text-[12.5px] font-medium text-gray-700">
+                  {branchLabel}
+                </span>
               </span>
               <span className="flex shrink-0 items-center gap-1.5">
                 <span className="rounded-md bg-brand-subtle px-1.5 py-0.5 text-[10.5px] font-semibold text-brand">
@@ -113,7 +136,10 @@ export function Sidebar({ collapsed, tenantName }: SidebarProps) {
           </div>
 
           {tenantMenuOpen ? (
-            <TenantMenu currentTenantId={session?.tenant.id} onClose={() => setTenantMenuOpen(false)} />
+            <TenantMenu
+              currentTenantId={session?.tenant.id}
+              onClose={() => setTenantMenuOpen(false)}
+            />
           ) : null}
           {branchMenuOpen ? (
             <BranchMenu
@@ -131,7 +157,7 @@ export function Sidebar({ collapsed, tenantName }: SidebarProps) {
 
       <nav className="flex-1 overflow-y-auto px-3 py-1">
         {showLabels ? (
-          <div className="px-2 pb-2 pt-1.5 text-[10.5px] font-semibold tracking-[0.1em] text-brand/60">
+          <div className="px-2 pb-2 pt-1.5 text-[10.5px] font-semibold tracking-widest text-brand/60">
             OPERAÇÃO
           </div>
         ) : null}
@@ -142,7 +168,11 @@ export function Sidebar({ collapsed, tenantName }: SidebarProps) {
               item={item}
               active={pathname === item.href}
               collapsed={collapsed}
-              count={item.href === "/estoque" && alertsCount > 0 ? String(alertsCount) : undefined}
+              count={
+                item.href === "/estoque" && alertsCount > 0
+                  ? String(alertsCount)
+                  : undefined
+              }
             />
           ))}
         </div>
@@ -164,10 +194,12 @@ export function Sidebar({ collapsed, tenantName }: SidebarProps) {
           <div className="mb-2.5 rounded-[10px] border border-brand-subtle-border bg-brand-subtle p-2.5">
             <div className="mb-1.5 flex items-center justify-between">
               <span className="text-xs font-semibold text-brand">
-                Trial · {trial.trialDaysRemaining} {trial.trialDaysRemaining === 1 ? "dia" : "dias"}
+                Trial · {trial.trialDaysRemaining}{" "}
+                {trial.trialDaysRemaining === 1 ? "dia" : "dias"}
               </span>
               <span className="text-[11px] text-brand/75">
-                {trial.trialDays - (trial.trialDaysRemaining ?? 0)}/{trial.trialDays}
+                {trial.trialDays - (trial.trialDaysRemaining ?? 0)}/
+                {trial.trialDays}
               </span>
             </div>
             <progress
@@ -191,7 +223,6 @@ export function Sidebar({ collapsed, tenantName }: SidebarProps) {
     </aside>
   );
 }
-
 
 function NavButton({
   item,
@@ -223,7 +254,9 @@ function NavButton({
         strokeWidth={active ? 2.1 : 1.8}
         className={cn("shrink-0", active && "text-accent")}
       />
-      {!collapsed ? <span className="flex-1 text-left">{item.label}</span> : null}
+      {!collapsed ? (
+        <span className="flex-1 text-left">{item.label}</span>
+      ) : null}
       {!collapsed && count ? (
         <span
           aria-label={`${count} alertas de estoque`}
@@ -236,7 +269,13 @@ function NavButton({
   );
 }
 
-function TenantMenu({ currentTenantId, onClose }: { currentTenantId?: string; onClose: () => void }) {
+function TenantMenu({
+  currentTenantId,
+  onClose,
+}: {
+  currentTenantId?: string;
+  onClose: () => void;
+}) {
   const router = useRouter();
   const tenants = useMyTenants();
   const selectTenant = useSelectTenant();
@@ -274,14 +313,19 @@ function TenantMenu({ currentTenantId, onClose }: { currentTenantId?: string; on
             <span className="block truncate text-[13px] font-medium text-gray-900">
               {tenant.name}
             </span>
-            <span className="block text-[11.5px] text-gray-400">{ROLE_LABEL[tenant.role]}</span>
+            <span className="block text-[11.5px] text-gray-400">
+              {ROLE_LABEL[tenant.role]}
+            </span>
           </span>
-          {tenant.tenantId === currentTenantId ? <Check size={15} className="text-brand" /> : null}
+          {tenant.tenantId === currentTenantId ? (
+            <Check size={15} className="text-brand" />
+          ) : null}
         </button>
       ))}
       <div className="my-1.5 flex items-start gap-2 rounded-lg border border-warning-border bg-warning-bg p-2.5">
         <span className="mt-px text-[11.5px] leading-relaxed text-warning-text">
-          Trocar de distribuidora muda todo o contexto de dados: produtos, estoque e equipe.
+          Trocar de distribuidora muda todo o contexto de dados: produtos,
+          estoque e equipe.
         </span>
       </div>
       <div className="my-1.5 h-px bg-gray-200" />

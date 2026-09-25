@@ -25,8 +25,6 @@ export function AuthPanel({ heading, description, features }: AuthPanelProps) {
     <aside className="relative flex min-h-24 items-center overflow-hidden bg-brand px-5 py-4 lg:min-h-dvh lg:flex-col lg:items-stretch lg:justify-between lg:px-12 lg:py-10 xl:px-16 xl:py-12">
       <div className="pointer-events-none absolute -right-12 -top-18 hidden h-64 w-64 rounded-full border border-accent/25 lg:block" />
       <div className="pointer-events-none absolute -right-28 top-20 hidden h-80 w-80 rounded-full border border-white/10 lg:block" />
-      <div className="pointer-events-none absolute bottom-0 left-0 hidden h-1 w-2/3 bg-accent lg:block" />
-
       <div className="relative w-fit overflow-hidden rounded-xl bg-white p-1 shadow-lg lg:rounded-2xl lg:p-2">
         <BrandLogo className="w-20 lg:w-36" priority />
       </div>

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { DefaultScreen } from "@/lib/api/types";
+import type { DefaultScreen, Role } from "@/lib/api/types";
 import { setAuthCookies, setTenantCookie } from "./auth-cookies";
 import { publicBackendFetch } from "./backend-fetch";
 import { assertSameOrigin } from "./same-origin";
@@ -7,7 +7,7 @@ import { assertSameOrigin } from "./same-origin";
 type SessionResult = {
   accessToken: string;
   refreshToken: string;
-  tenants: { tenantId: string; name: string; role: string; defaultScreen: DefaultScreen }[];
+  tenants: { tenantId: string; name: string; role: Role; defaultScreen: DefaultScreen }[];
 };
 
 export type PostAuthResponse =

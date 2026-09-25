@@ -4,18 +4,21 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
+import { FcGoogle } from "react-icons/fc";
 import { AuthLayout, AuthPanel, AuthFormPane } from "@/components/auth/auth-layout";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useLogin } from "@/lib/api/hooks/use-auth";
-import { ApiError, TOO_MANY_REQUESTS_MESSAGE } from "@/lib/api/client";
+import { useLogin, useResendVerification } from "@/lib/api/hooks/use-auth";
+import { ApiError, TOO_MANY_REQUESTS_MESSAGE, errorMessage } from "@/lib/api/client";
 import { FormError } from "@/components/ui/form-error";
 import { destinationPath } from "@/lib/post-auth";
 
 export default function LoginPage() {
   const router = useRouter();
   const login = useLogin();
+  const resend = useResendVerification();
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,12 +27,14 @@ export default function LoginPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setUnverifiedEmail(null);
+    resend.reset();
     try {
       const result = await login.mutateAsync({ email, password });
       router.push(destinationPath(result));
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
-        setError("Confirme seu e-mail antes de entrar.");
+        setUnverifiedEmail(email);
       } else if (err instanceof ApiError && err.status === 429) {
         setError(TOO_MANY_REQUESTS_MESSAGE);
       } else {
@@ -59,6 +64,28 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4.5">
             {error ? (
               <FormError>{error}</FormError>
+            ) : null}
+            {unverifiedEmail ? (
+              resend.isSuccess ? (
+                <div role="status" className="rounded-[10px] border border-success-border bg-success-bg px-3 py-2.5 text-[13px] text-success-text">
+                  Enviamos um novo link de confirmação para <strong>{unverifiedEmail}</strong>. Confira também a caixa de spam.
+                </div>
+              ) : (
+                <FormError>
+                  <span>Confirme seu e-mail antes de entrar. </span>
+                  <button
+                    type="button"
+                    onClick={() => resend.mutate(unverifiedEmail)}
+                    disabled={resend.isPending}
+                    className="font-semibold underline underline-offset-2 disabled:opacity-60"
+                  >
+                    {resend.isPending ? "Enviando…" : "Reenviar link de confirmação"}
+                  </button>
+                  {resend.isError ? (
+                    <span className="mt-1 block">{errorMessage(resend.error, "Não foi possível reenviar agora. Tente de novo em instantes.")}</span>
+                  ) : null}
+                </FormError>
+              )
             ) : null}
 
             <div>
@@ -114,6 +141,20 @@ export default function LoginPage() {
               {login.isPending ? "Entrando…" : "Entrar"}
             </Button>
           </form>
+
+          <div className="my-5 flex items-center gap-3 text-xs text-gray-400" aria-hidden>
+            <span className="h-px flex-1 bg-gray-200" />
+            <span>ou</span>
+            <span className="h-px flex-1 bg-gray-200" />
+          </div>
+
+          <a
+            href="/api/auth/google"
+            className="inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-[10px] border border-brand-subtle-border bg-brand-subtle px-5 text-[14.5px] font-semibold text-brand-dark transition-colors hover:border-brand hover:bg-brand hover:text-white focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-brand/20"
+          >
+            <FcGoogle size={20} aria-hidden />
+            Continuar com Google
+          </a>
 
           <div className="mt-6 border-t border-brand-subtle-border pt-5 text-center text-sm text-gray-500">
             Ainda não possui uma conta?{" "}

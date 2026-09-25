@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
-import type { Product, ProductInput, ProductList, ProductTab, StockLevel } from "@/lib/api/types";
+import type { Product, ProductCategory, ProductInput, ProductList, ProductTab, StockLevel } from "@/lib/api/types";
 import { useInvalidate } from "@/lib/api/hooks/use-invalidate";
 
 export type ProductFilters = {
@@ -26,7 +26,7 @@ export function useProducts(filters: ProductFilters, enabled = true) {
 export function useProductCategories() {
   return useQuery({
     queryKey: ["products", "categories"],
-    queryFn: () => api.get<string[]>("/products/categories"),
+    queryFn: () => api.get<ProductCategory[]>("/products/categories"),
   });
 }
 

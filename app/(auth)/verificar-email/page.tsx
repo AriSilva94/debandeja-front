@@ -4,7 +4,9 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { AuthLayout, AuthPanel, AuthFormPane } from "@/components/auth/auth-layout";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
 import { useVerifyEmail } from "@/lib/api/hooks/use-auth";
 import { destinationPath } from "@/lib/post-auth";
 
@@ -37,8 +39,12 @@ function VerificarEmailContent() {
             </div>
             <h2 className="mb-2 text-xl font-semibold text-gray-900">Link inválido</h2>
             <p className="text-sm leading-relaxed text-gray-500">
-              Esse link de verificação está incompleto. Confira o e-mail que você recebeu.
+              Esse link de verificação está incompleto. Confira o e-mail que você recebeu, ou
+              entre com seu e-mail e senha para receber um novo link.
             </p>
+            <Link href="/login" className={cn(buttonVariants("secondary", "lg"), "mt-5.5 w-full")}>
+            Ir para o login
+          </Link>
           </>
         ) : verifyEmail.isError ? (
           <>

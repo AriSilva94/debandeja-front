@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import LoginPage from "@/app/(auth)/login/page";
 import ProdutosPage from "@/app/(shell)/produtos/page";
@@ -31,12 +31,14 @@ import { SecurityTab } from "@/components/settings/security-tab";
 import { PreferencesTab } from "@/components/settings/preferences-tab";
 
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+const route = vi.hoisted(() => ({ search: "" }));
 
 vi.mock("@/lib/hard-navigate", () => ({ hardNavigate: vi.fn() }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/",
   useRouter: () => router,
+  useSearchParams: () => new URLSearchParams(route.search),
 }));
 
 const BRANCHES: Branch[] = [
@@ -54,8 +56,8 @@ const INACTIVE_BRANCH: Branch = {
 };
 
 const PRODUCTS: Product[] = [
-  { id: "p-1", sku: "BEER-001", name: "Heineken Long Neck 330ml", brand: "Heineken", category: "Cervejas", barcode: null, unit: "UN", price: "6.90", minStock: 50, active: true, stock: 284, level: "ok" },
-  { id: "p-2", sku: "BEER-002", name: "Corona Extra 330ml", brand: "Corona", category: "Cervejas", barcode: null, unit: "UN", price: "7.50", minStock: 40, active: true, stock: 31, level: "low" },
+  { id: "p-1", categoryId: "c-1", sku: "BEER-001", name: "Heineken Long Neck 330ml", brand: "Heineken", category: "Cervejas", barcode: null, unit: "UN", price: "6.90", minStock: 50, active: true, stock: 284, level: "ok" },
+  { id: "p-2", categoryId: "c-1", sku: "BEER-002", name: "Corona Extra 330ml", brand: "Corona", category: "Cervejas", barcode: null, unit: "UN", price: "7.50", minStock: 40, active: true, stock: 31, level: "low" },
 ];
 
 const PERMISSIONS: Record<Role, SessionContext["permissions"]> = {
@@ -101,7 +103,7 @@ function sessionContext(): SessionContext {
 const RESPONSES: Record<string, unknown> = {
   "/api/backend/branches": BRANCHES,
   "/api/backend/products": { items: PRODUCTS, total: 2, page: 1, pageSize: 8, counts: { all: 2, active: 2, inactive: 0, alert: 1 } },
-  "/api/backend/products/categories": ["Cervejas"],
+  "/api/backend/products/categories": [{ id: "c-1", name: "Cervejas" }],
   "/api/backend/team": [
     { id: "m-1", role: "OWNER", status: "ACTIVE", lastAccessAt: null, name: "Ari Teste", email: "ari@example.com", avatarUrl: null, branches: [], inviteExpired: false },
     { id: "m-2", role: "STOCKIST", status: "ACTIVE", lastAccessAt: null, name: "Carla Nunes", email: "carla@example.com", avatarUrl: null, branches: [{ id: "b-1", name: "Matriz" }], inviteExpired: false },
@@ -210,16 +212,19 @@ beforeEach(() => {
   preferencesState = DEFAULT_PREFERENCES;
   router.push.mockClear();
   router.replace.mockClear();
+  route.search = "";
   vi.mocked(hardNavigate).mockClear();
   queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (input: string) => {
+    vi.fn(async (input: string, init?: RequestInit) => {
       const [path, query] = input.split("?");
       const productId = new URLSearchParams(query).get("productId");
       const product = PRODUCTS.find((p) => p.id === productId);
       const body = product
         ? stockFor(product)
+        : path === "/api/backend/products/categories" && init?.method === "POST"
+          ? { id: "c-new", name: "Energéticos" }
         : path === "/api/backend/me/context"
           ? sessionContext()
           : RESPONSES[path];
@@ -276,11 +281,25 @@ describe("superfícies sobrepostas", () => {
     fireEvent.keyDown(document, { key: "Escape" });
     expect(onClose).toHaveBeenCalledOnce();
   });
+
+  it("não fecha o drawer ao clicar fora", () => {
+    const onClose = vi.fn();
+
+    const { container } = render(
+      <Drawer open onClose={onClose} title="Editar produto">
+        Conteúdo
+      </Drawer>,
+    );
+
+    fireEvent.click(container.querySelector("[aria-hidden='true']")!);
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });
 
 describe("reinicialização de formulários", () => {
   it("restaura o status do produto ao reabrir o drawer", () => {
-    const props = { onClose: vi.fn(), product: PRODUCTS[0], categories: ["Cervejas"] };
+    const props = { onClose: vi.fn(), product: PRODUCTS[0], categories: [{ id: "c-1", name: "Cervejas" }] };
     const { rerender } = render(withProviders(<NewProductDrawer open {...props} />));
 
     fireEvent.click(screen.getByRole("switch"));
@@ -292,11 +311,85 @@ describe("reinicialização de formulários", () => {
     expect((screen.getByRole("switch") as HTMLInputElement).checked).toBe(true);
   });
 
-  it("pede estoque inicial por filial só ao cadastrar produto novo", async () => {
-    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[]} />));
+  it("mostra estoque inicial por filial apenas quando solicitado no cadastro novo", async () => {
+    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[{ id: "c-1", name: "Cervejas" }]} />));
+
+    expect(screen.queryByRole("textbox", { name: "Estoque inicial da filial Matriz" })).toBeNull();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Adicionar estoque inicial" }));
 
     expect(await screen.findByRole("textbox", { name: "Estoque inicial da filial Matriz" })).toBeTruthy();
     expect(screen.getByRole("textbox", { name: "Estoque inicial da filial Filial Norte" })).toBeTruthy();
+  });
+
+  it("destaca e foca o primeiro campo inválido ao salvar", () => {
+    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[{ id: "c-1", name: "Cervejas" }]} />));
+
+    fireEvent.change(screen.getByLabelText("Nome do produto"), { target: { value: "Água" } });
+    fireEvent.change(screen.getByLabelText("SKU"), { target: { value: "AGUA-001" } });
+    fireEvent.click(screen.getByLabelText("Categoria"));
+    fireEvent.click(screen.getByRole("button", { name: "Cervejas" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar produto" }));
+
+    const price = screen.getByLabelText("Preço de venda");
+    expect(price.getAttribute("aria-invalid")).toBe("true");
+    expect(document.activeElement).toBe(price);
+  });
+
+  it("oferece Outros quando não encontra uma categoria", async () => {
+    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[{ id: "c-1", name: "Cervejas" }, { id: "c-2", name: "Outros" }]} />));
+
+    const category = screen.getByLabelText("Categoria");
+    fireEvent.change(category, { target: { value: "Energéticos" } });
+    fireEvent.click(screen.getByRole("button", { name: "Usar Outros" }));
+
+    await waitFor(() => expect((category as HTMLInputElement).value).toBe("Outros"));
+  });
+
+  it("mantém o foco na busca de categorias durante a digitação", () => {
+    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[{ id: "c-1", name: "Cervejas" }]} />));
+
+    const category = screen.getByLabelText("Categoria");
+    (category as HTMLInputElement).focus();
+    fireEvent.change(category, { target: { value: "c" } });
+
+    expect(document.activeElement).toBe(category);
+    expect((category as HTMLInputElement).value).toBe("c");
+  });
+
+  it("não considera a busca de categoria como alteração do cadastro", () => {
+    const onClose = vi.fn();
+    render(withProviders(<NewProductDrawer open onClose={onClose} product={null} categories={[{ id: "c-1", name: "Cervejas" }]} />));
+
+    fireEvent.change(screen.getByLabelText("Categoria"), { target: { value: "c" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("dialog", { name: "Descartar alterações?" })).toBeNull();
+  });
+
+  it("pede confirmação antes de descartar alterações", () => {
+    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[{ id: "c-1", name: "Cervejas" }]} />));
+
+    fireEvent.change(screen.getByLabelText("Nome do produto"), { target: { value: "Água" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(screen.getByRole("dialog", { name: "Descartar alterações?" })).toBeTruthy();
+  });
+
+  it("confirma o produto salvo e permite cadastrar outro", async () => {
+    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[{ id: "c-1", name: "Cervejas" }]} />));
+
+    fireEvent.change(screen.getByLabelText("Nome do produto"), { target: { value: "Água" } });
+    fireEvent.change(screen.getByLabelText("SKU"), { target: { value: "AGUA-001" } });
+    fireEvent.click(screen.getByLabelText("Categoria"));
+    fireEvent.click(screen.getByRole("button", { name: "Cervejas" }));
+    fireEvent.change(screen.getByLabelText("Preço de venda"), { target: { value: "5,00" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar produto" }));
+
+    await screen.findByText("Produto cadastrado");
+    expect(screen.getByRole("button", { name: "Cadastrar outro" })).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Salvar produto" })).toBeNull());
   });
 
   it("restaura o status da filial ao reabrir o drawer", () => {
@@ -753,6 +846,7 @@ describe("nomes e estados acessíveis", () => {
           showMenuButton
           showSearch={false}
           showCrumbTenant={false}
+          label="Buscar"
           onToggleNav={vi.fn()}
         />,
       ),
@@ -760,6 +854,77 @@ describe("nomes e estados acessíveis", () => {
 
     expect(screen.getByRole("button", { name: "Abrir menu principal" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Notificações" })).toBeTruthy();
+  });
+
+  it("exibe o rótulo de busca recebido sem atalho visual", () => {
+    const props = {
+      tenantName: "Distribuidora Silva",
+      showMenuButton: false,
+      showSearch: true,
+      showCrumbTenant: false,
+      onToggleNav: vi.fn(),
+      label: "Buscar produtos e movimentações",
+    } as Parameters<typeof Header>[0];
+
+    render(withProviders(<Header {...props} />));
+
+    expect(
+      screen.getByRole("combobox", { name: "Buscar produtos e movimentações" }),
+    ).toBeTruthy();
+    expect(screen.queryByText("⌘K")).toBeNull();
+  });
+
+  it("busca produtos e abre a listagem filtrada", async () => {
+    render(
+      withProviders(
+        <Header
+          tenantName="Distribuidora Silva"
+          showMenuButton={false}
+          showSearch
+          showCrumbTenant={false}
+          label="Buscar produtos, SKUs ou movimentações"
+          onToggleNav={vi.fn()}
+        />,
+      ),
+    );
+
+    fireEvent.change(
+      screen.getByRole("combobox", {
+        name: "Buscar produtos, SKUs ou movimentações",
+      }),
+      { target: { value: "hei" } },
+    );
+
+    const result = await screen.findByRole("option", {
+      name: /Heineken Long Neck 330ml/i,
+    });
+    fireEvent.click(result);
+
+    expect(router.push).toHaveBeenCalledWith("/produtos?busca=hei");
+  });
+
+  it("abre o resultado ativo pelo teclado", async () => {
+    render(
+      withProviders(
+        <Header
+          tenantName="Distribuidora Silva"
+          showMenuButton={false}
+          showSearch
+          showCrumbTenant={false}
+          label="Buscar produtos, SKUs ou movimentações"
+          onToggleNav={vi.fn()}
+        />,
+      ),
+    );
+
+    const input = screen.getByRole("combobox", {
+      name: "Buscar produtos, SKUs ou movimentações",
+    });
+    fireEvent.change(input, { target: { value: "hei" } });
+    await screen.findByRole("option", { name: /Heineken Long Neck 330ml/i });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    expect(router.push).toHaveBeenCalledWith("/produtos?busca=hei");
   });
 
   it("nomeia os campos de busca das listagens", () => {
@@ -771,5 +936,14 @@ describe("nomes e estados acessíveis", () => {
 
     rerender(withProviders(<EquipePage />));
     expect(screen.getByRole("textbox", { name: "Buscar membros" })).toBeTruthy();
+  });
+
+  it("inicializa as listagens com a busca recebida na URL", () => {
+    route.search = "busca=heineken";
+    const { rerender } = render(withProviders(<ProdutosPage />));
+    expect((screen.getByRole("textbox", { name: "Buscar produtos" }) as HTMLInputElement).value).toBe("heineken");
+
+    rerender(withProviders(<EstoquePage />));
+    expect((screen.getByRole("textbox", { name: "Buscar estoque" }) as HTMLInputElement).value).toBe("heineken");
   });
 });
