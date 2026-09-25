@@ -61,6 +61,7 @@ export type ProductTab = "all" | "active" | "inactive" | "alert";
 
 export type Product = {
   id: string;
+  categoryId: string;
   sku: string;
   name: string;
   brand: string | null;
@@ -74,13 +75,18 @@ export type Product = {
   level: StockLevel;
 };
 
+export type ProductCategory = {
+  id: string;
+  name: string;
+};
+
 export type ProductList = Paginated<Product> & { counts: Record<ProductTab, number> };
 
 export type ProductInput = {
   sku: string;
   name: string;
   brand?: string;
-  category: string;
+  categoryId: string;
   barcode?: string;
   unit: ProductUnit;
   price: number;

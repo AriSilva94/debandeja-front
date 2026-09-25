@@ -277,6 +277,7 @@ function ProdutosContent({ initialSearch }: { initialSearch: string }) {
         onClose={() => setDrawerOpen(false)}
         product={editingProduct}
         categories={categories.data ?? []}
+        categoriesLoading={categories.isPending}
       />
       <NewMovementDrawer
         open={movementProductId !== null}
@@ -342,7 +343,7 @@ function ProdutosContent({ initialSearch }: { initialSearch: string }) {
             active={category !== ALL_CATEGORIES}
             selected={category}
             onSelect={updateFilter(setCategory)}
-            options={[ALL_CATEGORIES, ...(categories.data ?? [])].map(
+            options={[ALL_CATEGORIES, ...(categories.data ?? []).map((category) => category.name)].map(
               (label) => ({ label }),
             )}
           />

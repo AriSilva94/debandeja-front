@@ -10,10 +10,11 @@ import { Switch } from "@/components/ui/switch";
 import { FormError } from "@/components/ui/form-error";
 import { cn } from "@/lib/cn";
 import { errorMessage } from "@/lib/api/client";
-import { useSaveProduct } from "@/lib/api/hooks/use-products";
-import type { Product, ProductInput, ProductUnit } from "@/lib/api/types";
+import { useCreateProductCategory, useSaveProduct } from "@/lib/api/hooks/use-products";
+import type { Product, ProductCategory, ProductInput, ProductUnit } from "@/lib/api/types";
 import { useBranch } from "@/lib/branch-context";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { CategoryCombobox } from "@/components/products/category-combobox";
 
 const UNITS: Array<{ value: ProductUnit; label: string }> = [
   { value: "UN", label: "Unidade (UN)" },
@@ -30,7 +31,8 @@ type NewProductDrawerProps = {
   open: boolean;
   onClose: () => void;
   product?: Product | null;
-  categories: string[];
+  categories: ProductCategory[];
+  categoriesLoading?: boolean;
 };
 
 export function NewProductDrawer({
@@ -38,6 +40,7 @@ export function NewProductDrawer({
   onClose,
   product,
   categories,
+  categoriesLoading,
 }: NewProductDrawerProps) {
   if (!open) return null;
 
@@ -47,6 +50,7 @@ export function NewProductDrawer({
       onClose={onClose}
       product={product}
       categories={categories}
+      categoriesLoading={categoriesLoading}
     />
   );
 }
@@ -71,6 +75,7 @@ function NewProductDrawerContent({
   onClose,
   product,
   categories,
+  categoriesLoading,
 }: Omit<NewProductDrawerProps, "open">) {
   const isEditing = Boolean(product);
   const branches = useBranch().branches.filter((branch) => branch.active);
@@ -86,8 +91,18 @@ function NewProductDrawerContent({
   const [initialStockError, setInitialStockError] = useState<string | null>(
     null,
   );
+  const [categoryError, setCategoryError] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(
+    () => categories.find((category) => category.id === product?.categoryId) ?? null,
+  );
   const formRef = useRef<HTMLFormElement>(null);
   const save = useSaveProduct();
+  const createCategory = useCreateProductCategory();
+
+  const category =
+    selectedCategory ??
+    categories.find((item) => item.id === product?.categoryId) ??
+    null;
 
   function fieldErrorId(name: keyof FieldErrors) {
     return `${name}-error`;
@@ -107,8 +122,7 @@ function NewProductDrawerContent({
     if (field("productName").length < 2)
       errors.productName = "Informe um nome com pelo menos 2 caracteres.";
     if (!field("sku")) errors.sku = "Informe o SKU do produto.";
-    if (field("category").length < 2)
-      errors.category = "Informe uma categoria com pelo menos 2 caracteres.";
+    if (!category) errors.category = "Selecione ou adicione uma categoria.";
     const price = parsePrice(field("price"));
     if (!Number.isFinite(price) || price <= 0)
       errors.price = "Informe um preço de venda maior que zero.";
@@ -150,7 +164,7 @@ function NewProductDrawerContent({
       sku: field("sku"),
       name: field("productName"),
       brand: field("brand") || undefined,
-      category: field("category"),
+      categoryId: category!.id,
       barcode: field("barcode") || undefined,
       unit: UNITS.find((unit) => unit.value === field("unit"))?.value ?? "UN",
       price,
@@ -200,6 +214,24 @@ function NewProductDrawerContent({
     setShowInitialStock(false);
     setHasChanges(false);
     setSaved(false);
+    setSelectedCategory(null);
+    setCategoryError(null);
+  }
+
+  function handleCategoryChange(category: ProductCategory) {
+    setSelectedCategory(category);
+    setCategoryError(null);
+    setFieldErrors((current) => ({ ...current, category: undefined }));
+    setHasChanges(true);
+  }
+
+  function handleCreateCategory(name: string) {
+    setCategoryError(null);
+    createCategory.mutate(name, {
+      onSuccess: handleCategoryChange,
+      onError: (createError) =>
+        setCategoryError(errorMessage(createError, "Não foi possível adicionar a categoria. Tente novamente.")),
+    });
   }
 
   return (
@@ -335,18 +367,18 @@ function NewProductDrawerContent({
             <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="category">Categoria</Label>
-                <Input
+                <CategoryCombobox
                   id="category"
-                  name="category"
-                  required
+                  categories={categories}
+                  value={category}
+                  loading={categoriesLoading}
+                  creating={createCategory.isPending}
                   error={Boolean(fieldErrors.category)}
-                  aria-invalid={Boolean(fieldErrors.category)}
-                  aria-describedby={
+                  describedBy={
                     fieldErrors.category ? fieldErrorId("category") : undefined
                   }
-                  list="product-categories"
-                  defaultValue={product?.category}
-                  placeholder="Cervejas"
+                  onChange={handleCategoryChange}
+                  onCreate={handleCreateCategory}
                 />
                 {fieldErrors.category ? (
                   <FieldError>
@@ -355,11 +387,7 @@ function NewProductDrawerContent({
                     </span>
                   </FieldError>
                 ) : null}
-                <datalist id="product-categories">
-                  {categories.map((category) => (
-                    <option key={category} value={category} />
-                  ))}
-                </datalist>
+                {categoryError ? <FieldError>{categoryError}</FieldError> : null}
               </div>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

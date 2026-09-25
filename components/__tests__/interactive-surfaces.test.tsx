@@ -56,8 +56,8 @@ const INACTIVE_BRANCH: Branch = {
 };
 
 const PRODUCTS: Product[] = [
-  { id: "p-1", sku: "BEER-001", name: "Heineken Long Neck 330ml", brand: "Heineken", category: "Cervejas", barcode: null, unit: "UN", price: "6.90", minStock: 50, active: true, stock: 284, level: "ok" },
-  { id: "p-2", sku: "BEER-002", name: "Corona Extra 330ml", brand: "Corona", category: "Cervejas", barcode: null, unit: "UN", price: "7.50", minStock: 40, active: true, stock: 31, level: "low" },
+  { id: "p-1", categoryId: "c-1", sku: "BEER-001", name: "Heineken Long Neck 330ml", brand: "Heineken", category: "Cervejas", barcode: null, unit: "UN", price: "6.90", minStock: 50, active: true, stock: 284, level: "ok" },
+  { id: "p-2", categoryId: "c-1", sku: "BEER-002", name: "Corona Extra 330ml", brand: "Corona", category: "Cervejas", barcode: null, unit: "UN", price: "7.50", minStock: 40, active: true, stock: 31, level: "low" },
 ];
 
 const PERMISSIONS: Record<Role, SessionContext["permissions"]> = {
@@ -103,7 +103,7 @@ function sessionContext(): SessionContext {
 const RESPONSES: Record<string, unknown> = {
   "/api/backend/branches": BRANCHES,
   "/api/backend/products": { items: PRODUCTS, total: 2, page: 1, pageSize: 8, counts: { all: 2, active: 2, inactive: 0, alert: 1 } },
-  "/api/backend/products/categories": ["Cervejas"],
+  "/api/backend/products/categories": [{ id: "c-1", name: "Cervejas" }],
   "/api/backend/team": [
     { id: "m-1", role: "OWNER", status: "ACTIVE", lastAccessAt: null, name: "Ari Teste", email: "ari@example.com", avatarUrl: null, branches: [], inviteExpired: false },
     { id: "m-2", role: "STOCKIST", status: "ACTIVE", lastAccessAt: null, name: "Carla Nunes", email: "carla@example.com", avatarUrl: null, branches: [{ id: "b-1", name: "Matriz" }], inviteExpired: false },
@@ -217,12 +217,14 @@ beforeEach(() => {
   queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (input: string) => {
+    vi.fn(async (input: string, init?: RequestInit) => {
       const [path, query] = input.split("?");
       const productId = new URLSearchParams(query).get("productId");
       const product = PRODUCTS.find((p) => p.id === productId);
       const body = product
         ? stockFor(product)
+        : path === "/api/backend/products/categories" && init?.method === "POST"
+          ? { id: "c-new", name: "Energéticos" }
         : path === "/api/backend/me/context"
           ? sessionContext()
           : RESPONSES[path];
@@ -283,7 +285,7 @@ describe("superfícies sobrepostas", () => {
 
 describe("reinicialização de formulários", () => {
   it("restaura o status do produto ao reabrir o drawer", () => {
-    const props = { onClose: vi.fn(), product: PRODUCTS[0], categories: ["Cervejas"] };
+    const props = { onClose: vi.fn(), product: PRODUCTS[0], categories: [{ id: "c-1", name: "Cervejas" }] };
     const { rerender } = render(withProviders(<NewProductDrawer open {...props} />));
 
     fireEvent.click(screen.getByRole("switch"));
@@ -296,7 +298,7 @@ describe("reinicialização de formulários", () => {
   });
 
   it("mostra estoque inicial por filial apenas quando solicitado no cadastro novo", async () => {
-    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[]} />));
+    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[{ id: "c-1", name: "Cervejas" }]} />));
 
     expect(screen.queryByRole("textbox", { name: "Estoque inicial da filial Matriz" })).toBeNull();
 
@@ -307,11 +309,12 @@ describe("reinicialização de formulários", () => {
   });
 
   it("destaca e foca o primeiro campo inválido ao salvar", () => {
-    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[]} />));
+    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[{ id: "c-1", name: "Cervejas" }]} />));
 
     fireEvent.change(screen.getByLabelText("Nome do produto"), { target: { value: "Água" } });
     fireEvent.change(screen.getByLabelText("SKU"), { target: { value: "AGUA-001" } });
-    fireEvent.change(screen.getByLabelText("Categoria"), { target: { value: "Águas" } });
+    fireEvent.click(screen.getByLabelText("Categoria"));
+    fireEvent.click(screen.getByRole("button", { name: "Cervejas" }));
     fireEvent.click(screen.getByRole("button", { name: "Salvar produto" }));
 
     const price = screen.getByLabelText("Preço de venda");
@@ -319,8 +322,22 @@ describe("reinicialização de formulários", () => {
     expect(document.activeElement).toBe(price);
   });
 
+  it("permite criar e selecionar uma categoria que não está na busca", async () => {
+    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[{ id: "c-1", name: "Cervejas" }]} />));
+
+    const category = screen.getByLabelText("Categoria");
+    fireEvent.change(category, { target: { value: "Energéticos" } });
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar “Energéticos”" }));
+
+    await waitFor(() => expect((category as HTMLInputElement).value).toBe("Energéticos"));
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      "/api/backend/products/categories",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+
   it("pede confirmação antes de descartar alterações", () => {
-    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[]} />));
+    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[{ id: "c-1", name: "Cervejas" }]} />));
 
     fireEvent.change(screen.getByLabelText("Nome do produto"), { target: { value: "Água" } });
     fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
@@ -329,11 +346,12 @@ describe("reinicialização de formulários", () => {
   });
 
   it("confirma o produto salvo e permite cadastrar outro", async () => {
-    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[]} />));
+    render(withProviders(<NewProductDrawer open onClose={vi.fn()} product={null} categories={[{ id: "c-1", name: "Cervejas" }]} />));
 
     fireEvent.change(screen.getByLabelText("Nome do produto"), { target: { value: "Água" } });
     fireEvent.change(screen.getByLabelText("SKU"), { target: { value: "AGUA-001" } });
-    fireEvent.change(screen.getByLabelText("Categoria"), { target: { value: "Águas" } });
+    fireEvent.click(screen.getByLabelText("Categoria"));
+    fireEvent.click(screen.getByRole("button", { name: "Cervejas" }));
     fireEvent.change(screen.getByLabelText("Preço de venda"), { target: { value: "5,00" } });
     fireEvent.click(screen.getByRole("button", { name: "Salvar produto" }));
 
