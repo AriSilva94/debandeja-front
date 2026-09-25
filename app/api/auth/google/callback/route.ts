@@ -6,6 +6,7 @@ import {
 } from "@/lib/server/resolve-destination";
 import {
   googleCallbackUrl,
+  googleLoginErrorRedirectUrl,
   googleOAuthCookieOptions,
   GOOGLE_OAUTH_NONCE_COOKIE,
   GOOGLE_OAUTH_STATE_COOKIE,
@@ -13,7 +14,20 @@ import {
 } from "@/lib/server/google-oauth";
 
 function loginRedirect(request: NextRequest) {
-  return NextResponse.redirect(new URL("/login?erro=google", request.url));
+  return NextResponse.redirect(googleLoginErrorRedirectUrl(request.url));
+}
+
+type GoogleOAuthFailureStage =
+  | "invalid_callback"
+  | "token_exchange"
+  | "backend_login"
+  | "unexpected";
+
+function logGoogleOAuthFailure(
+  stage: GoogleOAuthFailureStage,
+  details: { status?: number; errorName?: string } = {},
+) {
+  console.error("Google OAuth callback failed", { stage, ...details });
 }
 
 function clearGoogleOAuthCookies(response: NextResponse) {
@@ -34,6 +48,7 @@ export async function GET(request: NextRequest) {
   const redirectUri = googleCallbackUrl();
 
   if (!code || !state || state !== expectedState || !verifier || !nonce || !clientId || !clientSecret || !redirectUri) {
+    logGoogleOAuthFailure("invalid_callback");
     return clearGoogleOAuthCookies(loginRedirect(request));
   }
 
@@ -54,6 +69,7 @@ export async function GET(request: NextRequest) {
     });
     const token = (await tokenResponse.json().catch(() => null)) as { id_token?: unknown } | null;
     if (!tokenResponse.ok || typeof token?.id_token !== "string") {
+      logGoogleOAuthFailure("token_exchange", { status: tokenResponse.status });
       return clearGoogleOAuthCookies(loginRedirect(request));
     }
 
@@ -64,6 +80,7 @@ export async function GET(request: NextRequest) {
       signal: AbortSignal.timeout(10_000),
     });
     if (!backendResponse.ok) {
+      logGoogleOAuthFailure("backend_login", { status: backendResponse.status });
       return clearGoogleOAuthCookies(loginRedirect(request));
     }
 
@@ -73,7 +90,10 @@ export async function GET(request: NextRequest) {
     return clearGoogleOAuthCookies(
       NextResponse.redirect(new URL(destinationPath(destination), request.url)),
     );
-  } catch {
+  } catch (error) {
+    logGoogleOAuthFailure("unexpected", {
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    });
     return clearGoogleOAuthCookies(loginRedirect(request));
   }
 }

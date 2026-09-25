@@ -94,8 +94,8 @@ function sessionContext(): SessionContext {
       planCode: "ESSENCIAL",
       planName: "Essencial",
       limits: { users: 3, branches: 1, products: 100 },
-      trialDays: 14,
-      trialDaysRemaining: 11,
+      trialDays: 7,
+      trialDaysRemaining: 4,
     },
   };
 }
@@ -166,8 +166,8 @@ const RESPONSES: Record<string, unknown> = {
     onTrial: true,
     plan: { code: "ESSENCIAL", name: "Essencial", price: "99", maxUsers: 3, maxBranches: 1, maxProducts: 100 },
     trialEndsAt: "2026-10-08T12:00:00.000Z",
-    trialDays: 14,
-    trialDaysRemaining: 11,
+    trialDays: 7,
+    trialDaysRemaining: 4,
     currentPeriodEnd: null,
     dataPurgeAt: null,
     usage: { users: { used: 2, limit: 3 }, branches: { used: 1, limit: 1 }, products: { used: 40, limit: null } },
@@ -573,7 +573,7 @@ describe("assinatura", () => {
     render(withProviders(<AssinaturaPage />));
 
     expect(await screen.findByText("Plano atual: Trial")).toBeTruthy();
-    expect(screen.getByText("Restam 11 de 14 dias")).toBeTruthy();
+    expect(screen.getByText("Restam 4 de 7 dias")).toBeTruthy();
     expect(screen.getByText("TRIAL · estado atual")).toBeTruthy();
     expect(await screen.findByText("1 filial e até 3 usuários")).toBeTruthy();
     expect(screen.getByText("Filiais ilimitadas e usuários ilimitados")).toBeTruthy();
@@ -728,7 +728,7 @@ describe("interface conforme o papel", () => {
 
     await screen.findByText("Vendedor");
     expect(screen.getByText("Trial")).toBeTruthy();
-    expect(screen.getByText("Trial · 11 dias")).toBeTruthy();
+    expect(screen.getByText("Trial · 4 dias")).toBeTruthy();
     expect(screen.queryByRole("link", { name: "Escolher plano" })).toBeNull();
     expect(screen.queryByRole("link", { name: /Filiais/ })).toBeNull();
     expect(screen.queryByRole("link", { name: /Equipe/ })).toBeNull();

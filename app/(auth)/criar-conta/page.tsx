@@ -56,7 +56,7 @@ export default function CriarContaPage() {
     return (
       <AuthLayout>
         <AuthPanel
-          heading="14 dias para organizar sua distribuidora."
+          heading="7 dias para organizar sua distribuidora."
           description="Sem cartão de crédito. Cadastre produtos, filiais e sua equipe hoje mesmo."
         />
         <AuthFormPane>
@@ -126,7 +126,7 @@ export default function CriarContaPage() {
   return (
     <AuthLayout>
       <AuthPanel
-        heading="14 dias para organizar sua distribuidora."
+        heading="7 dias para organizar sua distribuidora."
         description="Sem cartão de crédito. Cadastre produtos, filiais e sua equipe hoje mesmo."
       />
       <AuthFormPane>

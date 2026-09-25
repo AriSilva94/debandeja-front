@@ -210,7 +210,7 @@ export default function OnboardingPage() {
               </h2>
               <p className="mb-6 text-[14.5px] leading-relaxed text-gray-500">
                 Seu período de teste começou. Você tem{" "}
-                <span className="font-semibold text-gray-900">14 dias de trial</span> com todos os
+                <span className="font-semibold text-gray-900">7 dias de trial</span> com todos os
                 recursos liberados.
               </p>
               <div className="mb-7 flex flex-wrap justify-center gap-3">
