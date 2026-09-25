@@ -69,3 +69,11 @@ export function googleCallbackUrl() {
     return null;
   }
 }
+
+export function googleLoginErrorRedirectUrl(requestUrl: string) {
+  return googleCallbackDestinationUrl("/login?erro=google", requestUrl);
+}
+
+export function googleCallbackDestinationUrl(path: string, requestUrl: string) {
+  return new URL(path, googleCallbackUrl() ?? requestUrl).toString();
+}
